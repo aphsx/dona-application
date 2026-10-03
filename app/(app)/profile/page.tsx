@@ -490,7 +490,7 @@ function SelectField({
   label: string;
   value: string | number;
   onChange: (value: string) => void;
-  options: { value: number; label: string }[];
+  options: { value: string | number; label: string }[];
   placeholder: string;
   disabled?: boolean;
 }) {
