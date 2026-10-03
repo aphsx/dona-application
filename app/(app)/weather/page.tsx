@@ -49,6 +49,13 @@ function dayHeading(iso: string, todayIso: string) {
   return DAY_TH[day.getDay()] ?? "";
 }
 
+function dayDate(iso: string) {
+  return new Date(`${iso}T12:00:00`).toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
 function WeatherArt({ code, size }: { code: number; size: number }) {
   return (
     <Image
@@ -298,6 +305,8 @@ export default function WeatherPage() {
                 <div className="min-w-0 flex-1 text-right">
                   <p className="text-[13px] font-medium text-[#8AA0AD]">
                     {dayHeading(featured.date, todayIso)}
+                    <span className="mx-1.5 text-[#C0CED6]">·</span>
+                    {dayDate(featured.date)}
                   </p>
                   <p className="mt-1 text-[34px] font-bold leading-none tracking-tight text-[#2F5F7A]">
                     {Math.round(featured.tempMax)}°
@@ -343,12 +352,21 @@ export default function WeatherPage() {
                           active ? "bg-[#E8F6F2]" : "hover:bg-[#F5FAFC]"
                         } ${index < weather.daily.length - 1 ? "border-b border-[#EEF4F7]" : ""}`}
                       >
-                        <span
-                          className={`w-[72px] shrink-0 text-[13px] font-medium ${
-                            active ? "font-bold text-brand" : "text-[#8AA0AD]"
-                          }`}
-                        >
-                          {dayHeading(day.date, todayIso)}
+                        <span className="w-[76px] shrink-0">
+                          <span
+                            className={`block text-[13px] font-medium leading-tight ${
+                              active ? "font-bold text-brand" : "text-[#8AA0AD]"
+                            }`}
+                          >
+                            {dayHeading(day.date, todayIso)}
+                          </span>
+                          <span
+                            className={`mt-0.5 block text-[11px] leading-tight ${
+                              active ? "font-medium text-brand/70" : "text-[#A8B8C2]"
+                            }`}
+                          >
+                            {dayDate(day.date)}
+                          </span>
                         </span>
                         <span className="grid h-10 w-10 shrink-0 place-items-center">
                           <WeatherArt code={day.weatherCode} size={34} />
