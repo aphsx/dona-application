@@ -6,6 +6,7 @@ import {
   clearSession,
   getSession,
   restoreSession,
+  setSession as persistSession,
   type FarmerSession,
 } from "@/lib/api";
 
@@ -28,6 +29,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   function setSession(next: FarmerSession | null) {
+    if (next) persistSession(next);
+    else clearSession();
     setSessionState(next);
   }
 

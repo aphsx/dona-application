@@ -83,11 +83,22 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   };
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
-  const response = await fetch(`${BASE}${path}`, { ...init, headers });
+  let response: Response;
+  try {
+    response = await fetch(`${BASE}${path}`, { ...init, headers });
+  } catch {
+    throw new ApiError("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ (ตรวจว่า API รันที่ :8080)", 0);
+  }
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
     if (response.status === 401 && path !== "/auth/login/phone") clearSession();
-    throw new ApiError(typeof body?.error === "string" ? body.error : "เกิดข้อผิดพลาด", response.status);
+    const message =
+      typeof body?.error === "string"
+        ? body.error
+        : response.status >= 500
+          ? "เซิร์ฟเวอร์มีปัญหา (มักเพราะ API :8080 ยังไม่รัน)"
+          : "เกิดข้อผิดพลาด";
+    throw new ApiError(message, response.status);
   }
   return body as T;
 }
@@ -112,6 +123,32 @@ export async function loginByPhone(tel: string) {
 export async function listMyPlots(farmerId: string) {
   const data = await apiRequest<{ items: Plot[] }>(`/plots?farmerId=${encodeURIComponent(farmerId)}&page=1&pageSize=100`);
   return data.items ?? [];
+}
+
+export async function getFarmer(id: string) {
+  return apiRequest<Farmer>(`/farmers/${id}`);
+}
+
+export type FarmerUpdateInput = {
+  firstName: string;
+  lastName: string;
+  tel: string;
+  address: string;
+  provinceId: number;
+  districtId: number;
+  subdistrictId: number;
+  groupId: string | null;
+};
+
+export async function updateFarmer(id: string, input: FarmerUpdateInput) {
+  return apiRequest<Farmer>(`/farmers/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function getGroup(id: string) {
+  return apiRequest<{ id: string; name: string; leaderId: string }>(`/groups/${id}`);
 }
 
 export function apiMessage(error: unknown) {
