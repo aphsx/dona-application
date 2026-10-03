@@ -186,6 +186,33 @@ export async function setFarmerAvatar(id: string, avatarUrl: string) {
   });
 }
 
+/** Upload a pre-compressed avatar via Next.js → Supabase Storage, then save URL. */
+export async function uploadFarmerAvatar(farmerId: string, file: Blob) {
+  if (!accessToken) throw new ApiError("ต้องเข้าสู่ระบบก่อน", 401);
+  const form = new FormData();
+  form.append("farmerId", farmerId);
+  form.append("file", file, "profile.webp");
+
+  let response: Response;
+  try {
+    response = await fetch("/api/avatar", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: form,
+    });
+  } catch {
+    throw new ApiError("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้", 0);
+  }
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new ApiError(
+      typeof body?.error === "string" ? body.error : "อัปโหลดรูปไม่สำเร็จ",
+      response.status,
+    );
+  }
+  return body as Farmer;
+}
+
 export async function getGroup(id: string) {
   return apiRequest<{ id: string; name: string; leaderId: string }>(`/groups/${id}`);
 }

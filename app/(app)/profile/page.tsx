@@ -1,17 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, X } from "lucide-react";
+import { Camera, Pencil, X } from "lucide-react";
 import {
   apiMessage,
   formatTelInput,
   getFarmer,
   getGroup,
   updateFarmer,
+  uploadFarmerAvatar,
   type Farmer,
 } from "@/lib/api";
+import { compressAvatar } from "@/lib/avatar";
 import { useAuth } from "@/lib/auth";
 import {
   districtOptions,
@@ -23,11 +25,13 @@ import {
 export default function ProfilePage() {
   const { session, setSession, logout } = useAuth();
   const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [farmer, setFarmer] = useState<Farmer | null>(session?.farmer ?? null);
   const [groupName, setGroupName] = useState("—");
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
   const [notice, setNotice] = useState("");
 
   const [firstName, setFirstName] = useState("");
@@ -88,6 +92,30 @@ export default function ProfilePage() {
     setEditing(true);
   }
 
+  async function onPickAvatar(file: File | undefined) {
+    if (!session || !file) return;
+    setAvatarBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const blob = await compressAvatar(file);
+      const next = await uploadFarmerAvatar(session.farmerId, blob);
+      setFarmer(next);
+      setSession({
+        ...session,
+        farmer: next,
+        displayName: `${next.firstName} ${next.lastName}`.trim(),
+        tel: next.tel,
+      });
+      setNotice("อัปเดตรูปโปรไฟล์แล้ว");
+    } catch (err) {
+      setError(apiMessage(err));
+    } finally {
+      setAvatarBusy(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
   const districts = useMemo(() => districtOptions(provinceId), [provinceId]);
   const subdistricts = useMemo(
     () => subdistrictOptions(provinceId, districtId),
@@ -124,15 +152,28 @@ export default function ProfilePage() {
         <>
           <div className="mt-5 rounded-3xl bg-white p-5 shadow-sm">
             <div className="flex items-center gap-4">
-              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-card-tint ring-1 ring-brand/10">
-                <Image
-                  src={farmer?.avatarUrl || "/images/account-icon.png"}
-                  alt=""
-                  width={64}
-                  height={64}
-                  className="h-full w-full object-cover"
-                  unoptimized={Boolean(farmer?.avatarUrl)}
-                />
+              <div className="relative shrink-0">
+                <div className="h-16 w-16 overflow-hidden rounded-2xl bg-card-tint ring-1 ring-brand/10">
+                  <Image
+                    src={farmer?.avatarUrl || "/images/account-icon.png"}
+                    alt=""
+                    width={64}
+                    height={64}
+                    className="h-full w-full object-cover"
+                    unoptimized={Boolean(farmer?.avatarUrl)}
+                  />
+                </div>
+                {canEdit && (
+                  <button
+                    type="button"
+                    disabled={avatarBusy}
+                    onClick={() => fileRef.current?.click()}
+                    className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-xl bg-brand text-white shadow-sm disabled:bg-brand/40"
+                    aria-label="เปลี่ยนรูปโปรไฟล์"
+                  >
+                    <Camera size={14} />
+                  </button>
+                )}
               </div>
               <div className="min-w-0">
                 <div className="truncate text-[18px] font-bold">{session?.displayName}</div>
@@ -142,7 +183,19 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+            {avatarBusy && (
+              <p className="mt-3 text-[12px] font-semibold text-brand">กำลังอัปโหลดรูป…</p>
+            )}
           </div>
+
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="user"
+            className="hidden"
+            onChange={(event) => void onPickAvatar(event.target.files?.[0])}
+          />
 
           <div className="mt-4 space-y-3 rounded-3xl bg-white p-5 shadow-sm text-[14px]">
             <Row label="ชื่อ" value={farmer?.firstName || "—"} />
@@ -154,7 +207,7 @@ export default function ProfilePage() {
             <Row label="ส่งเข้าโรงสีแล้ว" value={`${farmer?.deliveredKg ?? 0} กก.`} />
           </div>
           <p className="mt-3 text-[12px] text-brand-dark/45">
-            แก้ได้: ชื่อ นามสกุล เบอร์ ที่อยู่ และที่ตั้ง · กลุ่ม/ยอดส่งแก้ไม่ได้จากแอปนี้
+            แก้ได้: รูปโปรไฟล์ ชื่อ นามสกุล เบอร์ ที่อยู่ และที่ตั้ง · กลุ่ม/ยอดส่งแก้ไม่ได้จากแอปนี้
           </p>
         </>
       ) : (
