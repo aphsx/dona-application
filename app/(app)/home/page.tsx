@@ -303,15 +303,13 @@ function SolutionCard({
 }) {
   const body = (
     <>
-      <span className="grid h-[52px] w-[52px] shrink-0 place-items-center">
-        <Image
-          src={item.icon}
-          alt=""
-          width={44}
-          height={44}
-          className="h-11 w-11 object-contain"
-        />
-      </span>
+      <Image
+        src={item.icon}
+        alt=""
+        width={56}
+        height={56}
+        className="h-14 w-14 object-contain"
+      />
       <span className="text-center text-[14px] font-semibold leading-tight text-brand-dark">
         {item.label}
       </span>
@@ -319,7 +317,7 @@ function SolutionCard({
   );
 
   const shell =
-    "flex w-[116px] shrink-0 flex-col items-center gap-3 rounded-[20px] border border-brand/[0.08] bg-white px-4 py-[18px] shadow-[0_8px_12px_rgba(0,0,0,0.05)]";
+    "flex w-[116px] shrink-0 flex-col items-center gap-2 rounded-[20px] border border-brand/[0.08] bg-white px-3 py-3 shadow-[0_8px_12px_rgba(0,0,0,0.05)]";
 
   if (item.enabled) {
     return (
