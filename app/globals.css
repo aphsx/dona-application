@@ -22,3 +22,28 @@ body {
 }
 
 :focus, :focus-visible { outline: none; }
+
+@keyframes home-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes home-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.home-fade {
+  animation: home-fade 420ms ease-out both;
+}
+
+.home-rise {
+  animation: home-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-fade,
+  .home-rise {
+    animation: none;
+  }
+}
