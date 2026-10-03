@@ -14,6 +14,7 @@ import {
   type Plot,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { PlotThumb } from "@/components/plot-thumb";
 import { placeLabel } from "@/lib/thai-place";
 
 type ScopeTab = "mine" | "group";
@@ -124,9 +125,7 @@ export default function PlotsPage() {
                 href={`/plots/${plot.id}`}
                 className="flex items-center gap-3 rounded-[22px] bg-white px-4 py-4 ring-1 ring-brand-dark/[0.05] transition hover:bg-card-tint/40 active:scale-[0.99]"
               >
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-card-tint text-brand">
-                  <MapPinned size={22} />
-                </span>
+                <PlotThumb plot={plot} />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     <span className="truncate text-[16px] font-bold text-brand-dark">{plot.name}</span>
@@ -137,7 +136,8 @@ export default function PlotsPage() {
                     )}
                   </span>
                   <span className="mt-0.5 block text-[13px] text-brand-dark/60">
-                    {formatAreaRai(plot.areaRai)} · {hasBoundary ? "มีขอบเขต" : "ยังไม่มีรูปแปลง"}
+                    {formatAreaRai(plot.areaRai)} ·{" "}
+                    {plot.previewUrl ? "มีรูปแปลง" : hasBoundary ? "มีขอบเขต" : "ยังไม่มีรูปแปลง"}
                   </span>
                   <span className="mt-0.5 block truncate text-[12px] text-brand-dark/40">
                     {showOwner && owner ? `${owner} · ` : ""}
