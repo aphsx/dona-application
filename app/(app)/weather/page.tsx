@@ -27,8 +27,6 @@ import {
   type WeatherKind,
 } from "@/lib/weather";
 
-const DAY_TH = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
-
 const KIND_TINT: Record<WeatherKind, string> = {
   clear: "from-[#FFF4D6] to-[#FFE8A8]",
   partly: "from-[#E8F6FF] to-[#D6EEFF]",
@@ -40,17 +38,15 @@ const KIND_TINT: Record<WeatherKind, string> = {
   snow: "from-[#F2F7FF] to-[#E4EEFF]",
 };
 
-function dayShort(iso: string) {
-  const date = new Date(`${iso}T12:00:00`);
-  return DAY_TH[date.getDay()] ?? "";
-}
+const DAY_TH = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
 
 function dayHeading(iso: string, todayIso: string) {
   if (iso === todayIso) return "วันนี้";
-  const tomorrow = new Date(`${todayIso}T12:00:00`);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  if (iso === tomorrow.toISOString().slice(0, 10)) return "พรุ่งนี้";
-  return dayShort(iso);
+  const today = new Date(`${todayIso}T12:00:00`);
+  const day = new Date(`${iso}T12:00:00`);
+  const diff = Math.round((day.getTime() - today.getTime()) / 86_400_000);
+  if (diff === 1) return "พรุ่งนี้";
+  return DAY_TH[day.getDay()] ?? "";
 }
 
 function WeatherArt({ code, size }: { code: number; size: number }) {
@@ -352,7 +348,7 @@ export default function WeatherPage() {
                             active ? "font-bold text-brand" : "text-[#8AA0AD]"
                           }`}
                         >
-                          {dayShort(day.date)}
+                          {dayHeading(day.date, todayIso)}
                         </span>
                         <span className="grid h-10 w-10 shrink-0 place-items-center">
                           <WeatherArt code={day.weatherCode} size={34} />
