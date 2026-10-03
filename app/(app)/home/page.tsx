@@ -147,11 +147,12 @@ export default function HomePage() {
               className="block h-11 w-11 overflow-hidden rounded-2xl bg-white/20 ring-1 ring-white/35"
             >
               <Image
-                src="/images/account-icon.png"
+                src={session?.farmer?.avatarUrl || "/images/account-icon.png"}
                 alt=""
                 width={44}
                 height={44}
                 className="h-full w-full object-cover"
+                unoptimized={Boolean(session?.farmer?.avatarUrl)}
               />
             </Link>
           </div>

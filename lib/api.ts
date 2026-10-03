@@ -18,6 +18,7 @@ export type Farmer = {
   subdistrictId: number;
   groupId: string | null;
   deliveredKg: number;
+  avatarUrl?: string | null;
 };
 
 export type Plot = {
@@ -175,6 +176,13 @@ export async function updateFarmer(id: string, input: FarmerUpdateInput) {
   return apiRequest<Farmer>(`/farmers/${id}`, {
     method: "PUT",
     body: JSON.stringify(input),
+  });
+}
+
+export async function setFarmerAvatar(id: string, avatarUrl: string) {
+  return apiRequest<Farmer>(`/farmers/${id}/avatar`, {
+    method: "PUT",
+    body: JSON.stringify({ avatarUrl }),
   });
 }
 

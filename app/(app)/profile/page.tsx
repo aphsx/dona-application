@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, X } from "lucide-react";
@@ -41,10 +42,24 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!session) return;
+    const farmerId = session.farmerId;
+    const current = session;
     void (async () => {
       try {
-        const next = await getFarmer(session.farmerId);
+        const next = await getFarmer(farmerId);
         setFarmer(next);
+        if (
+          current.farmer.avatarUrl !== next.avatarUrl ||
+          current.tel !== next.tel ||
+          current.displayName !== `${next.firstName} ${next.lastName}`.trim()
+        ) {
+          setSession({
+            ...current,
+            displayName: `${next.firstName} ${next.lastName}`.trim(),
+            tel: next.tel,
+            farmer: next,
+          });
+        }
         if (next.groupId) {
           const group = await getGroup(next.groupId);
           setGroupName(group.name);
@@ -55,7 +70,9 @@ export default function ProfilePage() {
         setError(apiMessage(err));
       }
     })();
-  }, [session]);
+    // Intentionally only refetch when the logged-in farmer changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.farmerId]);
 
   function startEdit() {
     if (!farmer) return;
@@ -106,10 +123,24 @@ export default function ProfilePage() {
       {!editing ? (
         <>
           <div className="mt-5 rounded-3xl bg-white p-5 shadow-sm">
-            <div className="text-[18px] font-bold">{session?.displayName}</div>
-            <div className="mt-1 text-[14px] text-brand-dark/65">{farmer?.tel ?? session?.tel}</div>
-            <div className="mt-3 inline-flex rounded-full bg-card-tint px-3 py-1 text-[12px] font-semibold text-brand">
-              {session?.role === "leader" ? "หัวหน้ากลุ่ม" : "สมาชิก"}
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-card-tint ring-1 ring-brand/10">
+                <Image
+                  src={farmer?.avatarUrl || "/images/account-icon.png"}
+                  alt=""
+                  width={64}
+                  height={64}
+                  className="h-full w-full object-cover"
+                  unoptimized={Boolean(farmer?.avatarUrl)}
+                />
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-[18px] font-bold">{session?.displayName}</div>
+                <div className="mt-1 text-[14px] text-brand-dark/65">{farmer?.tel ?? session?.tel}</div>
+                <div className="mt-3 inline-flex rounded-full bg-card-tint px-3 py-1 text-[12px] font-semibold text-brand">
+                  {session?.role === "leader" ? "หัวหน้ากลุ่ม" : "สมาชิก"}
+                </div>
+              </div>
             </div>
           </div>
 
