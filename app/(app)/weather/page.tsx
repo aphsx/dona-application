@@ -2,8 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Droplets, Umbrella, Wind, type LucideIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  Check,
+  ChevronDown,
+  Droplets,
+  MapPinned,
+  Umbrella,
+  Wind,
+  type LucideIcon,
+} from "lucide-react";
+import { PlotThumb } from "@/components/plot-thumb";
 import { listMyPlots, type Plot } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { placeCenter, placeLabel, provinceName } from "@/lib/thai-place";
@@ -73,6 +83,8 @@ export default function WeatherPage() {
   const [selectedDate, setSelectedDate] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -83,6 +95,24 @@ export default function WeatherPage() {
       })
       .catch(() => setPlots([]));
   }, [session]);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!pickerRef.current?.contains(event.target as Node)) {
+        setPickerOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPickerOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [pickerOpen]);
 
   const selected = plots.find((plot) => plot.id === plotId) ?? plots[0] ?? null;
   const place = useMemo(() => {
@@ -170,31 +200,85 @@ export default function WeatherPage() {
         <div />
       </header>
 
-      <p className="relative z-10 mt-2 px-5 text-center text-[12px] font-medium text-white/80">
-        {locationLabel}
-      </p>
+      <div className="relative z-20 mx-4 mt-4" ref={pickerRef}>
+        <button
+          type="button"
+          disabled={plots.length <= 1}
+          onClick={() => setPickerOpen((open) => !open)}
+          aria-haspopup="listbox"
+          aria-expanded={pickerOpen}
+          className="flex w-full items-center gap-3 rounded-[20px] border border-brand/[0.10] bg-white px-3.5 py-3 text-left shadow-[0_10px_24px_rgba(15,73,59,0.10)] disabled:cursor-default"
+        >
+          {selected ? (
+            <PlotThumb plot={selected} />
+          ) : (
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-card-tint text-brand">
+              <MapPinned size={22} />
+            </span>
+          )}
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px] font-semibold tracking-wide text-brand/70">
+              แปลงที่ดูอากาศ
+            </span>
+            <span className="mt-0.5 block truncate text-[15px] font-bold text-brand-dark">
+              {selected?.name || "ยังไม่มีแปลง"}
+            </span>
+            <span className="mt-0.5 block truncate text-[12px] font-medium text-brand-dark/50">
+              {locationLabel}
+            </span>
+          </span>
+          {plots.length > 1 && (
+            <ChevronDown
+              size={18}
+              className={`shrink-0 text-brand/60 transition ${pickerOpen ? "rotate-180" : ""}`}
+            />
+          )}
+        </button>
 
-      {plots.length > 1 && (
-        <div className="relative z-10 mt-3 flex justify-center gap-2 overflow-x-auto px-5">
-          {plots.map((plot) => {
-            const active = (selected?.id ?? "") === plot.id;
-            return (
-              <button
-                key={plot.id}
-                type="button"
-                onClick={() => setPlotId(plot.id)}
-                className={`shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition ${
-                  active ? "bg-white text-[#2F6B7A]" : "bg-white/25 text-white"
-                }`}
-              >
-                {plot.name}
-              </button>
-            );
-          })}
-        </div>
-      )}
+        {pickerOpen && plots.length > 1 && (
+          <ul
+            role="listbox"
+            className="absolute inset-x-0 top-[calc(100%+8px)] z-30 overflow-hidden rounded-[20px] border border-brand/[0.08] bg-white py-1.5 shadow-[0_16px_36px_rgba(15,73,59,0.16)]"
+          >
+            {plots.map((plot) => {
+              const active = (selected?.id ?? "") === plot.id;
+              const plotPlace = placeFromPlot(plot);
+              const plotPlaceLabel = plotPlace
+                ? placeLabel(plotPlace) !== "—"
+                  ? placeLabel(plotPlace)
+                  : provinceName(plot.provinceId)
+                : "—";
+              return (
+                <li key={plot.id} role="option" aria-selected={active}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPlotId(plot.id);
+                      setPickerOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition ${
+                      active ? "bg-card-tint" : "hover:bg-brand-light/80"
+                    }`}
+                  >
+                    <PlotThumb plot={plot} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[14px] font-bold text-brand-dark">
+                        {plot.name}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[12px] text-brand-dark/50">
+                        {plotPlaceLabel}
+                      </span>
+                    </span>
+                    {active && <Check size={18} className="shrink-0 text-brand" strokeWidth={2.5} />}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
 
-      <div className="relative z-10 mx-4 mt-5">
+      <div className="relative z-10 mx-4 mt-4">
         {busy && !weather && (
           <div className="rounded-[28px] bg-white/90 px-5 py-10 text-center text-[14px] text-[#5A7A88]">
             กำลังโหลดอากาศ…
