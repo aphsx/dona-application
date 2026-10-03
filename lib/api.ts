@@ -125,6 +125,37 @@ export async function listMyPlots(farmerId: string) {
   return data.items ?? [];
 }
 
+export async function listGroupPlots(groupId: string) {
+  const data = await apiRequest<{ items: Plot[] }>(`/plots?groupId=${encodeURIComponent(groupId)}&page=1&pageSize=100`);
+  return data.items ?? [];
+}
+
+export async function listGroupFarmers(groupId: string) {
+  const data = await apiRequest<{ items: Farmer[] }>(
+    `/farmers?groupId=${encodeURIComponent(groupId)}&page=1&pageSize=100`,
+  );
+  return data.items ?? [];
+}
+
+export async function getPlot(id: string) {
+  return apiRequest<Plot>(`/plots/${encodeURIComponent(id)}`);
+}
+
+export function farmerDisplayName(farmer: Pick<Farmer, "firstName" | "lastName">) {
+  return `${farmer.firstName} ${farmer.lastName}`.trim() || "—";
+}
+
+export function formatAreaRai(totalRai: number): string {
+  if (!totalRai || totalRai <= 0) return "-";
+  let fullRai = Math.floor(totalRai);
+  let ngan = Math.round((totalRai - fullRai) * 4);
+  if (ngan === 4) {
+    fullRai += 1;
+    ngan = 0;
+  }
+  return `${fullRai} ไร่${ngan > 0 ? ` ${ngan} งาน` : ""}`;
+}
+
 export async function getFarmer(id: string) {
   return apiRequest<Farmer>(`/farmers/${id}`);
 }
