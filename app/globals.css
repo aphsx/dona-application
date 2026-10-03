@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Noto Sans Thai", "Noto Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-dark: #0f493b;
+  --color-brand: #1d8a6a;
+  --color-brand-light: #f3fbf7;
+  --color-card-tint: #e7f5ee;
+  --color-accent: #f4c35d;
+  --color-danger: #ef4444;
+}
+
+html, body, #__next {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-brand-light);
+  color: var(--color-brand-dark);
+  font-family: var(--font-sans);
+}
+
+:focus, :focus-visible { outline: none; }
