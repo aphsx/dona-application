@@ -1,4 +1,4 @@
-import places from "../node_modules/thai-address-select/dist/src/data/thai-address.json";
+import slim from "./data/thai-places-slim.json";
 
 export type PlaceIds = {
   provinceId: number;
@@ -6,77 +6,72 @@ export type PlaceIds = {
   subdistrictId: number;
 };
 
-type ThaiSubdistrict = {
-  id: number;
-  name_th: string;
-  lat: number | null;
-  long: number | null;
-};
-type ThaiDistrict = {
-  id: number;
-  name_th: string;
-  sub_districts?: ThaiSubdistrict[];
-};
-type ThaiProvince = {
-  id: number;
-  name_th: string;
-  districts?: ThaiDistrict[];
+type Slim = {
+  provinces: [number, string][];
+  districts: [number, string, number][];
+  subdistricts: [number, string, number, number, number | null, number | null][];
 };
 
-const thaiPlaces = places as ThaiProvince[];
+const data = slim as Slim;
 
-const provinceById = new Map(thaiPlaces.map((item) => [item.id, item]));
-const districtById = new Map<number, ThaiDistrict & { provinceId: number }>();
-const subdistrictById = new Map<number, ThaiSubdistrict & { provinceId: number; districtId: number }>();
+const provinceById = new Map(data.provinces.map(([id, name]) => [id, name]));
+const districtById = new Map(
+  data.districts.map(([id, name, provinceId]) => [id, { name, provinceId }]),
+);
+const subdistrictById = new Map(
+  data.subdistricts.map(([id, name, districtId, provinceId, lat, lng]) => [
+    id,
+    { name, districtId, provinceId, lat, lng },
+  ]),
+);
 
-for (const province of thaiPlaces) {
-  for (const district of province.districts ?? []) {
-    districtById.set(district.id, { ...district, provinceId: province.id });
-    for (const subdistrict of district.sub_districts ?? []) {
-      subdistrictById.set(subdistrict.id, {
-        ...subdistrict,
-        provinceId: province.id,
-        districtId: district.id,
-      });
-    }
-  }
+const districtsByProvince = new Map<number, { id: number; name: string }[]>();
+for (const [id, name, provinceId] of data.districts) {
+  const list = districtsByProvince.get(provinceId) ?? [];
+  list.push({ id, name });
+  districtsByProvince.set(provinceId, list);
+}
+
+const subdistrictsByDistrict = new Map<number, { id: number; name: string }[]>();
+for (const [id, name, districtId] of data.subdistricts) {
+  const list = subdistrictsByDistrict.get(districtId) ?? [];
+  list.push({ id, name });
+  subdistrictsByDistrict.set(districtId, list);
 }
 
 export function provinceOptions() {
-  return thaiPlaces
+  return data.provinces
     .slice()
-    .sort((a, b) => a.name_th.localeCompare(b.name_th, "th"))
-    .map((item) => ({ value: String(item.id), label: item.name_th }));
+    .sort((a, b) => a[1].localeCompare(b[1], "th"))
+    .map(([id, name]) => ({ value: String(id), label: name }));
 }
 
 export function districtOptions(provinceId: number) {
-  const province = provinceById.get(provinceId);
-  if (!province) return [];
-  return (province.districts ?? [])
+  return (districtsByProvince.get(provinceId) ?? [])
     .slice()
-    .sort((a, b) => a.name_th.localeCompare(b.name_th, "th"))
-    .map((item) => ({ value: String(item.id), label: item.name_th }));
+    .sort((a, b) => a.name.localeCompare(b.name, "th"))
+    .map((item) => ({ value: String(item.id), label: item.name }));
 }
 
 export function subdistrictOptions(provinceId: number, districtId: number) {
   const district = districtById.get(districtId);
   if (!district || district.provinceId !== provinceId) return [];
-  return (district.sub_districts ?? [])
+  return (subdistrictsByDistrict.get(districtId) ?? [])
     .slice()
-    .sort((a, b) => a.name_th.localeCompare(b.name_th, "th"))
-    .map((item) => ({ value: String(item.id), label: item.name_th }));
+    .sort((a, b) => a.name.localeCompare(b.name, "th"))
+    .map((item) => ({ value: String(item.id), label: item.name }));
 }
 
 export function provinceName(id: number) {
-  return provinceById.get(id)?.name_th ?? "—";
+  return provinceById.get(id) ?? "—";
 }
 
 export function districtName(id: number) {
-  return districtById.get(id)?.name_th ?? "—";
+  return districtById.get(id)?.name ?? "—";
 }
 
 export function subdistrictName(id: number) {
-  return subdistrictById.get(id)?.name_th ?? "—";
+  return subdistrictById.get(id)?.name ?? "—";
 }
 
 export function placeLabel(place: PlaceIds | null | undefined) {
@@ -104,32 +99,28 @@ export function isCompletePlace(place: PlaceIds | null | undefined) {
 export function placeAt(lng: number, lat: number): PlaceIds | null {
   let best: PlaceIds | null = null;
   let bestDistance = Infinity;
-  for (const province of thaiPlaces) {
-    for (const district of province.districts ?? []) {
-      for (const subdistrict of district.sub_districts ?? []) {
-        if (subdistrict.lat == null || subdistrict.long == null) continue;
-        const dLat = subdistrict.lat - lat;
-        const dLng = subdistrict.long - lng;
-        const distance = dLat * dLat + dLng * dLng;
-        if (distance >= bestDistance) continue;
-        bestDistance = distance;
-        best = {
-          provinceId: province.id,
-          districtId: district.id,
-          subdistrictId: subdistrict.id,
-        };
-      }
-    }
+  for (const [id, sub] of subdistrictById) {
+    if (sub.lat == null || sub.lng == null) continue;
+    const dLat = sub.lat - lat;
+    const dLng = sub.lng - lng;
+    const distance = dLat * dLat + dLng * dLng;
+    if (distance >= bestDistance) continue;
+    bestDistance = distance;
+    best = {
+      provinceId: sub.provinceId,
+      districtId: sub.districtId,
+      subdistrictId: id,
+    };
   }
   return best;
 }
 
 export type PlaceCenter = { lng: number; lat: number; zoom: number };
 
-function averagePoint(points: { lat: number; long: number }[]): { lng: number; lat: number } | null {
+function averagePoint(points: { lat: number; lng: number }[]): { lng: number; lat: number } | null {
   if (points.length === 0) return null;
   const lat = points.reduce((sum, point) => sum + point.lat, 0) / points.length;
-  const lng = points.reduce((sum, point) => sum + point.long, 0) / points.length;
+  const lng = points.reduce((sum, point) => sum + point.lng, 0) / points.length;
   return { lng, lat };
 }
 
@@ -139,27 +130,23 @@ export function placeCenter(place: Partial<PlaceIds> | null | undefined): PlaceC
 
   if (place.subdistrictId) {
     const sub = subdistrictById.get(place.subdistrictId);
-    if (sub?.lat != null && sub.long != null) {
-      return { lng: sub.long, lat: sub.lat, zoom: 15 };
+    if (sub?.lat != null && sub.lng != null) {
+      return { lng: sub.lng, lat: sub.lat, zoom: 15 };
     }
   }
 
   if (place.districtId) {
-    const district = districtById.get(place.districtId);
-    const points = (district?.sub_districts ?? []).filter(
-      (item): item is ThaiSubdistrict & { lat: number; long: number } => item.lat != null && item.long != null,
-    );
+    const points = data.subdistricts
+      .filter(([, , districtId, , lat, lng]) => districtId === place.districtId && lat != null && lng != null)
+      .map(([, , , , lat, lng]) => ({ lat: lat as number, lng: lng as number }));
     const avg = averagePoint(points);
     if (avg) return { ...avg, zoom: 12 };
   }
 
   if (place.provinceId) {
-    const province = provinceById.get(place.provinceId);
-    const points = (province?.districts ?? []).flatMap((district) =>
-      (district.sub_districts ?? []).filter(
-        (item): item is ThaiSubdistrict & { lat: number; long: number } => item.lat != null && item.long != null,
-      ),
-    );
+    const points = data.subdistricts
+      .filter(([, , , provinceId, lat, lng]) => provinceId === place.provinceId && lat != null && lng != null)
+      .map(([, , , , lat, lng]) => ({ lat: lat as number, lng: lng as number }));
     const avg = averagePoint(points);
     if (avg) return { ...avg, zoom: 9 };
   }

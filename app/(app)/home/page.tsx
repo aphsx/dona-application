@@ -3,9 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Bell, ChevronRight, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { listMyPlots, type Plot } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { placeCenter, placeLabel, provinceName } from "@/lib/thai-place";
+import { fetchWeather, weatherLabel, type WeatherBundle } from "@/lib/weather";
 
 const NOTIFICATIONS = [
   "แจ้งเตือนโรคระบาด",
@@ -36,17 +38,70 @@ function formatAreaRai(totalRai: number): string {
 export default function HomePage() {
   const { session } = useAuth();
   const [plots, setPlots] = useState<Plot[]>([]);
+  const [weather, setWeather] = useState<WeatherBundle | null>(null);
 
   useEffect(() => {
     if (!session) return;
     void listMyPlots(session.farmerId).then(setPlots).catch(() => setPlots([]));
   }, [session]);
 
+  const place = useMemo(() => {
+    const plot = plots.find((item) => item.provinceId);
+    if (plot) {
+      return {
+        provinceId: plot.provinceId,
+        districtId: plot.districtId,
+        subdistrictId: plot.subdistrictId,
+        name: plot.name,
+      };
+    }
+    const farmer = session?.farmer;
+    if (farmer?.provinceId) {
+      return {
+        provinceId: farmer.provinceId,
+        districtId: farmer.districtId,
+        subdistrictId: farmer.subdistrictId,
+        name: "",
+      };
+    }
+    return null;
+  }, [plots, session]);
+
+  const focus = placeCenter(place);
+
+  useEffect(() => {
+    if (!focus) {
+      setWeather(null);
+      return;
+    }
+    let cancelled = false;
+    void fetchWeather(focus.lat, focus.lng, 7)
+      .then((bundle) => {
+        if (!cancelled) setWeather(bundle);
+      })
+      .catch(() => {
+        if (!cancelled) setWeather(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [focus?.lat, focus?.lng]);
+
   const displayName = session?.displayName?.trim() || "ผู้ใช้งาน";
   const fieldCount = plots.length ? String(plots.length) : "-";
   const totalArea = plots.reduce((sum, plot) => sum + (plot.areaRai || 0), 0);
   const areaLabel = formatAreaRai(totalArea);
   const notifCount = NOTIFICATIONS.length;
+  const weatherPlace =
+    place && placeLabel(place) !== "—"
+      ? placeLabel(place)
+      : place?.name || (place ? provinceName(place.provinceId) : "ยังไม่มีข้อมูลพื้นที่");
+  const weatherTemp = weather ? `${Math.round(weather.current.temperature)}°` : "—";
+  const weatherCondition = weather
+    ? weatherLabel(weather.current.weatherCode)
+    : place
+      ? "กำลังโหลด…"
+      : "แตะเพื่อดูพยากรณ์";
 
   return (
     <div className="home-page relative min-h-full pb-10">
@@ -106,7 +161,7 @@ export default function HomePage() {
       {/* Weather + stats as one composition */}
       <section className="home-rise relative mt-6 px-5">
         <Link
-          href="/notifications"
+          href="/weather"
           className="group block overflow-hidden rounded-[28px] bg-white/95 shadow-[0_18px_40px_rgba(15,73,59,0.18)] ring-1 ring-white/60 backdrop-blur"
         >
           <div className="relative flex items-center gap-4 px-5 py-5">
@@ -116,11 +171,11 @@ export default function HomePage() {
             </div>
             <div className="relative min-w-0 flex-1">
               <p className="text-[12px] font-semibold tracking-wide text-brand/80">พยากรณ์อากาศ</p>
-              <p className="mt-0.5 truncate text-[17px] font-bold text-brand-dark">ยังไม่มีข้อมูลพื้นที่</p>
-              <p className="mt-0.5 text-[13px] text-brand-dark/55">แตะเพื่อดูพยากรณ์</p>
+              <p className="mt-0.5 truncate text-[17px] font-bold text-brand-dark">{weatherPlace}</p>
+              <p className="mt-0.5 text-[13px] text-brand-dark/55">{weatherCondition}</p>
             </div>
             <div className="relative text-right">
-              <p className="text-[32px] font-bold leading-none tracking-tight text-brand-dark">—</p>
+              <p className="text-[32px] font-bold leading-none tracking-tight text-brand-dark">{weatherTemp}</p>
               <ChevronRight
                 size={18}
                 className="ml-auto mt-2 text-brand/50 transition group-hover:translate-x-0.5 group-hover:text-brand"
