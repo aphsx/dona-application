@@ -23,6 +23,15 @@ body {
 
 :focus, :focus-visible { outline: none; }
 
+/* Keep scroll, hide the scrollbar track (mobile-app feel). */
+.app-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.app-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes home-fade {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }

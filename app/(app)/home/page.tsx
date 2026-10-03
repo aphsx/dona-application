@@ -7,7 +7,12 @@ import { useEffect, useMemo, useState } from "react";
 import { listMyPlots, type Plot } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { placeCenter, placeLabel, provinceName } from "@/lib/thai-place";
-import { fetchWeather, weatherLabel, type WeatherBundle } from "@/lib/weather";
+import {
+  fetchWeather,
+  weatherIconSrc,
+  weatherLabel,
+  type WeatherBundle,
+} from "@/lib/weather";
 
 const NOTIFICATIONS = [
   "แจ้งเตือนโรคระบาด",
@@ -17,11 +22,11 @@ const NOTIFICATIONS = [
 ];
 
 const MENUS = [
-  { href: "/plots", label: "แปลงนา", icon: "/icons/menu-plots.png" },
-  { href: "/notifications", label: "วิเคราะห์โรค", icon: "/icons/menu-disease.png" },
-  { href: "/notifications", label: "บริการเกษตร", icon: "/icons/menu-service.png" },
-  { href: "/notifications", label: "ร้านค้า", icon: "/icons/menu-store.png" },
-  { href: "/notifications", label: "ฟางข้าว", icon: "/icons/menu-straw.png" },
+  { href: "/plots", label: "แปลงนา", icon: "/icons/menu-plots.png", enabled: true },
+  { href: "#", label: "วิเคราะห์โรค", icon: "/icons/menu-disease.png", enabled: false },
+  { href: "#", label: "บริการเกษตร", icon: "/icons/menu-service.png", enabled: false },
+  { href: "#", label: "ร้านค้า", icon: "/icons/menu-store.png", enabled: false },
+  { href: "#", label: "ฟางข้าว", icon: "/icons/menu-straw.png", enabled: false },
 ] as const;
 
 function formatAreaRai(totalRai: number): string {
@@ -168,7 +173,17 @@ export default function HomePage() {
           <div className="relative flex items-center gap-4 px-5 py-5">
             <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_80%_20%,rgba(29,138,106,0.12),transparent_60%)]" />
             <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-card-tint">
-              <Image src="/icons/weather-cloud.png" alt="" width={36} height={36} />
+              <Image
+                src={
+                  weather
+                    ? weatherIconSrc(weather.current.weatherCode)
+                    : "/icons/weather/partly_cloudy.png"
+                }
+                alt=""
+                width={40}
+                height={40}
+                className="object-contain"
+              />
             </div>
             <div className="relative min-w-0 flex-1">
               <p className="text-[12px] font-semibold tracking-wide text-brand/80">พยากรณ์อากาศ</p>
@@ -192,32 +207,21 @@ export default function HomePage() {
         </Link>
       </section>
 
-      {/* Solutions */}
+      {/* Solutions — layout mirrors Flutter home_screen quick actions */}
       <section className="home-rise relative mt-8 px-5" style={{ animationDelay: "80ms" }}>
         <div className="mb-3 flex items-end justify-between gap-3">
           <div>
             <h2 className="text-[18px] font-bold text-brand-dark">โซลูชันโดน่า</h2>
             <p className="mt-0.5 text-[13px] text-brand-dark/50">เครื่องมือหลักสำหรับงานในนา</p>
           </div>
-          <Link href="/notifications" className="text-[13px] font-semibold text-brand">
+          <span className="cursor-default text-[13px] font-semibold text-brand">
             ทั้งหมด
-          </Link>
+          </span>
         </div>
 
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 justify-items-center gap-x-0 gap-y-4">
           {MENUS.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="flex flex-col items-center gap-2 rounded-2xl px-1 py-2 transition hover:bg-white/70 active:scale-[0.97]"
-            >
-              <span className="grid h-14 w-14 place-items-center rounded-[18px] bg-white shadow-[0_8px_18px_rgba(15,73,59,0.08)] ring-1 ring-brand-dark/[0.04]">
-                <Image src={item.icon} alt="" width={32} height={32} className="object-contain" />
-              </span>
-              <span className="text-center text-[11px] font-semibold leading-tight text-brand-dark">
-                {item.label}
-              </span>
-            </Link>
+            <SolutionCard key={item.label} item={item} />
           ))}
         </div>
       </section>
@@ -288,6 +292,46 @@ function Metric({
     >
       <p className="truncate text-[16px] font-bold text-brand-dark">{value}</p>
       <p className="mt-0.5 text-[11px] font-medium text-brand-dark/50">{label}</p>
+    </div>
+  );
+}
+
+function SolutionCard({
+  item,
+}: {
+  item: (typeof MENUS)[number];
+}) {
+  const body = (
+    <>
+      <span className="grid h-[52px] w-[52px] shrink-0 place-items-center">
+        <Image
+          src={item.icon}
+          alt=""
+          width={44}
+          height={44}
+          className="h-11 w-11 object-contain"
+        />
+      </span>
+      <span className="text-center text-[14px] font-semibold leading-tight text-brand-dark">
+        {item.label}
+      </span>
+    </>
+  );
+
+  const shell =
+    "flex w-[116px] shrink-0 flex-col items-center gap-3 rounded-[20px] border border-brand/[0.08] bg-white px-4 py-[18px] shadow-[0_8px_12px_rgba(0,0,0,0.05)]";
+
+  if (item.enabled) {
+    return (
+      <Link href={item.href} className={`${shell} transition active:scale-[0.98]`}>
+        {body}
+      </Link>
+    );
+  }
+
+  return (
+    <div aria-disabled title="เร็วๆ นี้" className={`${shell} cursor-default`}>
+      {body}
     </div>
   );
 }
