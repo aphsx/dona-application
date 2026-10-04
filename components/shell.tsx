@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Home, List, MessageCircle, User } from "lucide-react";
+import { Bell, ClipboardList, Home, MessageCircle, User } from "lucide-react";
 
 const NAV = [
   { href: "/home", label: "หน้าหลัก", icon: Home },
-  { href: "/plots", label: "แปลงนา", icon: List },
+  { href: "/plan", label: "แผนการปลูก", icon: ClipboardList },
   { href: "/notifications", label: "แจ้งเตือน", icon: Bell },
   { href: "/chat", label: "แชท", icon: MessageCircle },
   { href: "/profile", label: "ข้อมูลส่วนตัว", icon: User },

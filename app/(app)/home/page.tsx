@@ -22,8 +22,8 @@ const NOTIFICATIONS = [
 ];
 
 const MENUS = [
+  { href: "/plan", label: "แผนการปลูก", icon: "/icons/menu-plan.png", enabled: true },
   { href: "/plots", label: "แปลงนา", icon: "/icons/menu-plots.png", enabled: true },
-  { href: "/plan", label: "แผนปลูก", icon: "/icons/menu-plan.png", enabled: true },
   { href: "#", label: "วิเคราะห์โรค", icon: "/icons/menu-disease.png", enabled: false },
   { href: "#", label: "บริการเกษตร", icon: "/icons/menu-service.png", enabled: false },
   { href: "#", label: "ร้านค้า", icon: "/icons/menu-store.png", enabled: false },
