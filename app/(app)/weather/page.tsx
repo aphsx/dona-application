@@ -14,7 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PlotThumb } from "@/components/plot-thumb";
-import { listMyPlots, type Plot } from "@/lib/api";
+import { getMyPlots, type PlotCard } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { placeCenter, placeLabel, provinceName } from "@/lib/thai-place";
 import {
@@ -69,7 +69,7 @@ function WeatherArt({ code, size }: { code: number; size: number }) {
   );
 }
 
-function placeFromPlot(plot: Plot | null | undefined) {
+function placeFromPlot(plot: PlotCard | null | undefined) {
   if (!plot?.provinceId) return null;
   return {
     provinceId: plot.provinceId,
@@ -80,7 +80,7 @@ function placeFromPlot(plot: Plot | null | undefined) {
 
 export default function WeatherPage() {
   const { session } = useAuth();
-  const [plots, setPlots] = useState<Plot[]>([]);
+  const [plots, setPlots] = useState<PlotCard[]>([]);
   const [plotId, setPlotId] = useState("");
   const [weather, setWeather] = useState<WeatherBundle | null>(null);
   const [selectedDate, setSelectedDate] = useState("");
@@ -91,7 +91,7 @@ export default function WeatherPage() {
 
   useEffect(() => {
     if (!session) return;
-    void listMyPlots(session.farmerId)
+    void getMyPlots("mine")
       .then((rows) => {
         setPlots(rows);
         if (rows[0]) setPlotId(rows[0].id);

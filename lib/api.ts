@@ -33,6 +33,20 @@ export type Plot = {
   polygon: number[][];
 };
 
+/** Lean plot row from GET /me/plots (no GeoJSON). */
+export type PlotCard = {
+  id: string;
+  farmerId: string;
+  name: string;
+  areaRai: number;
+  provinceId: number;
+  districtId: number;
+  subdistrictId: number;
+  previewUrl?: string | null;
+  hasBoundary: boolean;
+  ownerName?: string;
+};
+
 export type FarmerSession = {
   token: string;
   tel: string;
@@ -135,6 +149,14 @@ export async function listGroupPlots(groupId: string) {
 export async function listGroupFarmers(groupId: string) {
   const data = await apiRequest<{ items: Farmer[] }>(
     `/farmers?groupId=${encodeURIComponent(groupId)}&page=1&pageSize=100`,
+  );
+  return data.items ?? [];
+}
+
+/** Fast farmer-app plot list (no boundary GeoJSON). scope: mine | group */
+export async function getMyPlots(scope: "mine" | "group" = "mine") {
+  const data = await apiRequest<{ items: PlotCard[]; scope: string }>(
+    `/me/plots?scope=${encodeURIComponent(scope)}`,
   );
   return data.items ?? [];
 }

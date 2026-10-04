@@ -2,16 +2,12 @@
 
 import Link from "next/link";
 import { ChevronRight, MapPinned } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   apiMessage,
-  farmerDisplayName,
   formatAreaRai,
-  listGroupFarmers,
-  listGroupPlots,
-  listMyPlots,
-  type Farmer,
-  type Plot,
+  getMyPlots,
+  type PlotCard,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PlotThumb } from "@/components/plot-thumb";
@@ -21,8 +17,7 @@ type ScopeTab = "mine" | "group";
 
 export default function PlotsPage() {
   const { session } = useAuth();
-  const [plots, setPlots] = useState<Plot[]>([]);
-  const [farmers, setFarmers] = useState<Farmer[]>([]);
+  const [plots, setPlots] = useState<PlotCard[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [scope, setScope] = useState<ScopeTab>("mine");
@@ -36,31 +31,16 @@ export default function PlotsPage() {
     setLoading(true);
     setError("");
 
-    const load =
-      leaderExtras && scope === "group" && groupId
-        ? Promise.all([listGroupPlots(groupId), listGroupFarmers(groupId)]).then(([nextPlots, nextFarmers]) => {
-            setPlots(nextPlots);
-            setFarmers(nextFarmers);
-          })
-        : listMyPlots(session.farmerId).then((nextPlots) => {
-            setPlots(nextPlots);
-            setFarmers([]);
-          });
-
-    void load.catch((err) => setError(apiMessage(err))).finally(() => setLoading(false));
-  }, [session, scope, leaderExtras, groupId]);
+    const nextScope: ScopeTab = leaderExtras && scope === "group" ? "group" : "mine";
+    void getMyPlots(nextScope)
+      .then(setPlots)
+      .catch((err) => setError(apiMessage(err)))
+      .finally(() => setLoading(false));
+  }, [session, scope, leaderExtras]);
 
   useEffect(() => {
     if (!leaderExtras && scope !== "mine") setScope("mine");
   }, [leaderExtras, scope]);
-
-  const farmerNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const farmer of farmers) {
-      map.set(farmer.id, farmerDisplayName(farmer));
-    }
-    return map;
-  }, [farmers]);
 
   const showOwner = leaderExtras && scope === "group";
 
@@ -116,8 +96,6 @@ export default function PlotsPage() {
 
       <ul className="mt-5 space-y-3">
         {plots.map((plot) => {
-          const hasBoundary = (plot.polygon?.length ?? 0) >= 4;
-          const owner = farmerNameById.get(plot.farmerId);
           const mine = plot.farmerId === session?.farmerId;
           return (
             <li key={plot.id}>
@@ -137,10 +115,10 @@ export default function PlotsPage() {
                   </span>
                   <span className="mt-0.5 block text-[13px] text-brand-dark/60">
                     {formatAreaRai(plot.areaRai)} ·{" "}
-                    {plot.previewUrl ? "มีรูปแปลง" : hasBoundary ? "มีขอบเขต" : "ยังไม่มีรูปแปลง"}
+                    {plot.previewUrl ? "มีรูปแปลง" : plot.hasBoundary ? "มีขอบเขต" : "ยังไม่มีรูปแปลง"}
                   </span>
                   <span className="mt-0.5 block truncate text-[12px] text-brand-dark/40">
-                    {showOwner && owner ? `${owner} · ` : ""}
+                    {showOwner && plot.ownerName ? `${plot.ownerName} · ` : ""}
                     {placeLabel(plot)}
                   </span>
                 </span>

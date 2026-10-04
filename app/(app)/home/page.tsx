@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Bell, ChevronRight, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { listMyPlots, type Plot } from "@/lib/api";
+import { getMyPlots, type PlotCard } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { placeCenter, placeLabel, provinceName } from "@/lib/thai-place";
 import {
@@ -43,12 +43,12 @@ function formatAreaRai(totalRai: number): string {
 
 export default function HomePage() {
   const { session } = useAuth();
-  const [plots, setPlots] = useState<Plot[]>([]);
+  const [plots, setPlots] = useState<PlotCard[]>([]);
   const [weather, setWeather] = useState<WeatherBundle | null>(null);
 
   useEffect(() => {
     if (!session) return;
-    void listMyPlots(session.farmerId).then(setPlots).catch(() => setPlots([]));
+    void getMyPlots("mine").then(setPlots).catch(() => setPlots([]));
   }, [session]);
 
   const place = useMemo(() => {
