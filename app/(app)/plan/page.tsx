@@ -151,9 +151,6 @@ export default function PlanPage() {
                     {item.plotName}
                     {item.varietyName ? ` · ${item.varietyName}` : ""}
                   </p>
-                  {item.dateKind === "planned" ? (
-                    <p className="mt-1 text-[12px] text-brand-dark/40">วันประมาณการ</p>
-                  ) : null}
                 </div>
               </li>
             );
