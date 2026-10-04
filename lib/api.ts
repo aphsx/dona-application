@@ -218,6 +218,47 @@ export async function getGroup(id: string) {
   return apiRequest<{ id: string; name: string; leaderId: string }>(`/groups/${id}`);
 }
 
+export type PlantingPlanStatus = {
+  id: number;
+  code: string;
+  name: string;
+};
+
+export type PlantingPlanItem = {
+  key: string;
+  type: string;
+  title: string;
+  statusId: number;
+  date: string;
+  dateKind: "actual" | "planned" | string;
+  plotId: string;
+  plotName: string;
+  plantingId: string;
+  varietyName: string;
+  note?: string;
+};
+
+export type PlantingPlan = {
+  items: PlantingPlanItem[];
+  statuses: PlantingPlanStatus[];
+  pendingCount: number;
+};
+
+export async function getMyPlantingPlan() {
+  return apiRequest<PlantingPlan>("/me/planting-plan");
+}
+
+export function formatThaiDate(value: string): string {
+  if (!value) return "—";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 export function apiMessage(error: unknown) {
   if (error instanceof ApiError) return error.message;
   return "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้";

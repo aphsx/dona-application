@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, MapPinned } from "lucide-react";
+import { ArrowLeft, ClipboardList, MapPinned } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   apiMessage,
@@ -125,6 +125,19 @@ export default function PlotDetailPage() {
               {hasBoundary ? `มีจุดขอบเขต ${plot.polygon.length} จุด` : "ยังไม่ได้วาดแนวเขต"}
             </p>
           </section>
+
+          <Link
+            href="/plan"
+            className="mt-4 flex items-center gap-3 rounded-[24px] bg-white px-4 py-4 ring-1 ring-brand-dark/[0.05] transition active:scale-[0.99]"
+          >
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-card-tint text-brand">
+              <ClipboardList size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-brand-dark">แผนการเพาะปลูก</p>
+              <p className="mt-0.5 text-[13px] text-brand-dark/55">ดูงานที่ต้องทำในรอบปลูก</p>
+            </div>
+          </Link>
         </>
       )}
     </div>
