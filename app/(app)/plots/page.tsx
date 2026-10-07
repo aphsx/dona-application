@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, MapPinned } from "lucide-react";
+import { ChevronRight, MapPinned, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   apiMessage,
@@ -25,6 +25,7 @@ export default function PlotsPage() {
   const isLeader = session?.role === "leader";
   const groupId = session?.farmer?.groupId ?? null;
   const leaderExtras = isLeader && !!groupId;
+  const canRegisterPlot = scope === "mine";
 
   useEffect(() => {
     if (!session) return;
@@ -46,17 +47,28 @@ export default function PlotsPage() {
 
   return (
     <div className="flex min-h-full flex-col px-5 pb-8 pt-8">
-      <div>
-        <h1 className="text-[22px] font-bold text-brand-dark">แปลงนา</h1>
-        <p className="mt-1 text-[14px] text-brand-dark/55">
-          {loading
-            ? "กำลังโหลด…"
-            : leaderExtras
-              ? scope === "group"
-                ? `${plots.length} แปลงในกลุ่ม · ดูอย่างเดียว`
-                : `${plots.length} แปลงของฉัน`
-              : "แปลงของคุณที่ลงทะเบียนกับโรงสี"}
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-[22px] font-bold text-brand-dark">แปลงนา</h1>
+          <p className="mt-1 text-[14px] text-brand-dark/55">
+            {loading
+              ? "กำลังโหลด…"
+              : leaderExtras
+                ? scope === "group"
+                  ? `${plots.length} แปลงในกลุ่ม · ดูอย่างเดียว`
+                  : `${plots.length} แปลงของฉัน`
+                : "แปลงของคุณที่ลงทะเบียนกับโรงสี"}
+          </p>
+        </div>
+        {canRegisterPlot && (
+          <Link
+            href="/plots/register"
+            className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-2xl bg-brand px-3.5 text-[13px] font-bold text-white shadow-sm"
+          >
+            <Plus size={16} strokeWidth={2.5} />
+            ลงทะเบียน
+          </Link>
+        )}
       </div>
 
       {leaderExtras && (
@@ -89,8 +101,19 @@ export default function PlotsPage() {
           <MapPinned className="mx-auto text-brand" size={36} />
           <p className="mt-3 font-bold">{scope === "group" ? "ยังไม่มีแปลงในกลุ่ม" : "ยังไม่มีแปลง"}</p>
           <p className="mt-1 text-[13px] text-brand-dark/55">
-            {scope === "group" ? "เมื่อสมาชิกมีแปลง จะเห็นที่นี่" : "ให้โรงสีช่วยเพิ่มแปลงให้คุณ"}
+            {scope === "group"
+              ? "เมื่อสมาชิกมีแปลง จะเห็นที่นี่"
+              : "ลงทะเบียนแปลงนาของคุณเพื่อเริ่มใช้งาน"}
           </p>
+          {canRegisterPlot && (
+            <Link
+              href="/plots/register"
+              className="mt-5 inline-flex h-11 items-center gap-1.5 rounded-2xl bg-brand px-5 text-[14px] font-bold text-white"
+            >
+              <Plus size={16} strokeWidth={2.5} />
+              ลงทะเบียนแปลง
+            </Link>
+          )}
         </div>
       )}
 

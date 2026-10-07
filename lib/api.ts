@@ -200,6 +200,22 @@ export async function getPlot(id: string) {
   return apiRequest<Plot>(`/plots/${encodeURIComponent(id)}`);
 }
 
+export type PlotCreateInput = {
+  farmerId: string;
+  name: string;
+  areaRai: number;
+  provinceId: number;
+  districtId: number;
+  subdistrictId: number;
+};
+
+export async function createPlot(input: PlotCreateInput) {
+  return apiRequest<Plot>("/plots", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
 export function farmerDisplayName(farmer: Pick<Farmer, "firstName" | "lastName">) {
   return `${farmer.firstName} ${farmer.lastName}`.trim() || "—";
 }
