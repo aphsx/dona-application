@@ -154,23 +154,23 @@ export function PlotMap({
       <div className="absolute left-3 top-3 z-10 flex gap-1.5">
         <button
           type="button"
+          aria-label="ภาพถ่าย"
           onClick={() => setMode("satellite")}
-          className={`inline-flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-[12px] font-bold ${
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${
             mode === "satellite" ? "bg-brand-dark text-white" : "bg-white text-brand-dark"
           }`}
         >
           <Satellite size={14} />
-          ภาพถ่าย
         </button>
         <button
           type="button"
+          aria-label="ถนน"
           onClick={() => setMode("street")}
-          className={`inline-flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-[12px] font-bold ${
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${
             mode === "street" ? "bg-brand-dark text-white" : "bg-white text-brand-dark"
           }`}
         >
           <MapIcon size={14} />
-          ถนน
         </button>
         <button
           type="button"

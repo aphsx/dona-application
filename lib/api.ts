@@ -207,12 +207,20 @@ export type PlotCreateInput = {
   provinceId: number;
   districtId: number;
   subdistrictId: number;
+  polygon?: number[][];
 };
 
 export async function createPlot(input: PlotCreateInput) {
   return apiRequest<Plot>("/plots", {
     method: "POST",
     body: JSON.stringify(input),
+  });
+}
+
+export async function measurePlotArea(polygon: number[][]) {
+  return apiRequest<{ areaRai: number; areaSqm: number }>("/plots/measure-area", {
+    method: "POST",
+    body: JSON.stringify({ polygon }),
   });
 }
 

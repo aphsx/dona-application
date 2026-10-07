@@ -14,29 +14,36 @@ const NAV = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const hideNav = pathname.startsWith("/plots/register");
   return (
     <div className="mx-auto flex h-full min-h-0 w-full max-w-lg flex-col bg-brand-light">
-      <main className="app-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+      <main
+        className={`min-h-0 flex-1 overflow-x-hidden ${
+          hideNav ? "overflow-hidden" : "app-scroll overflow-y-auto"
+        }`}
+      >
         {children}
       </main>
-      <nav className="grid shrink-0 grid-cols-5 bg-white px-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-1px_0_rgba(0,0,0,0.06)]">
-        {NAV.map((item) => {
-          const Icon = item.icon;
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] ${
-                active ? "font-semibold text-brand" : "text-gray-400"
-              }`}
-            >
-              <Icon size={22} strokeWidth={active ? 2.25 : 1.75} />
-              <span className="leading-tight">{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      {!hideNav && (
+        <nav className="grid shrink-0 grid-cols-5 bg-white px-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-1px_0_rgba(0,0,0,0.06)]">
+          {NAV.map((item) => {
+            const Icon = item.icon;
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] ${
+                  active ? "font-semibold text-brand" : "text-gray-400"
+                }`}
+              >
+                <Icon size={22} strokeWidth={active ? 2.25 : 1.75} />
+                <span className="leading-tight">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
     </div>
   );
 }
