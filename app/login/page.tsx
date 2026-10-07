@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Phone } from "lucide-react";
@@ -81,8 +82,11 @@ function LoginForm() {
           </button>
         </form>
 
-        <p className="mt-8 text-center text-[13px] text-brand-dark/50">
-          สำหรับเกษตรกรที่ลงทะเบียนกับโรงสีแล้ว
+        <p className="mt-8 text-center text-[14px] text-brand-dark/60">
+          ยังไม่มีบัญชี?{" "}
+          <Link href="/register" className="font-bold text-brand underline-offset-2 hover:underline">
+            ลงทะเบียน
+          </Link>
         </p>
       </div>
     </div>

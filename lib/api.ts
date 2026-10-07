@@ -107,7 +107,13 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   }
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    if (response.status === 401 && path !== "/auth/login/phone") clearSession();
+    if (
+      response.status === 401 &&
+      path !== "/auth/login/phone" &&
+      path !== "/auth/register"
+    ) {
+      clearSession();
+    }
     const message =
       typeof body?.error === "string"
         ? body.error
@@ -119,11 +125,7 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-export async function loginByPhone(tel: string) {
-  const data = await apiRequest<FarmerSession>("/auth/login/phone", {
-    method: "POST",
-    body: JSON.stringify({ tel }),
-  });
+function toSession(data: FarmerSession): FarmerSession {
   const session: FarmerSession = {
     token: data.token,
     tel: data.tel,
@@ -134,6 +136,33 @@ export async function loginByPhone(tel: string) {
   };
   setSession(session);
   return session;
+}
+
+export async function loginByPhone(tel: string) {
+  const data = await apiRequest<FarmerSession>("/auth/login/phone", {
+    method: "POST",
+    body: JSON.stringify({ tel }),
+  });
+  return toSession(data);
+}
+
+export type FarmerRegisterInput = {
+  firstName: string;
+  lastName: string;
+  tel: string;
+  address: string;
+  provinceId: number;
+  districtId: number;
+  subdistrictId: number;
+};
+
+/** Self-register then receive the same session shape as phone login. */
+export async function registerFarmer(input: FarmerRegisterInput) {
+  const data = await apiRequest<FarmerSession>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return toSession(data);
 }
 
 export async function listMyPlots(farmerId: string) {
