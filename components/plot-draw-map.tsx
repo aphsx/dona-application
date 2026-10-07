@@ -27,11 +27,17 @@ export function PlotDrawMap({
   draft,
   onMapClick,
   focus = null,
+  gps = null,
+  followGps = false,
+  allowClick = true,
   className = "",
 }: {
   draft: LngLat[];
   onMapClick: (lng: number, lat: number) => void;
   focus?: { lng: number; lat: number; zoom?: number } | null;
+  gps?: { lng: number; lat: number; accuracy?: number } | null;
+  followGps?: boolean;
+  allowClick?: boolean;
   className?: string;
 }) {
   const mapRef = useRef<MapRef>(null);
@@ -45,6 +51,7 @@ export function PlotDrawMap({
   const open = openRing(draft);
   const closed = isClosedRing(draft);
   const focusKey = focus ? `${focus.lng}:${focus.lat}:${focus.zoom ?? ""}` : "";
+  const gpsKey = gps ? `${gps.lng.toFixed(6)}:${gps.lat.toFixed(6)}` : "";
 
   // Keep a stable FeatureCollection + layer set. Swapping LineString↔Polygon
   // (or layer ids) inside one Source leaves MapLibre with a blank draft.
@@ -67,6 +74,17 @@ export function PlotDrawMap({
     return { type: "FeatureCollection" as const, features };
   }, [draft, open, closed]);
 
+  // Dense GPS traces: only pin the start (and end while open).
+  const markers = useMemo(() => {
+    if (open.length === 0) return [] as { point: LngLat; index: number; start: boolean }[];
+    if (open.length <= 24) {
+      return open.map((point, index) => ({ point, index, start: index === 0 }));
+    }
+    const list = [{ point: open[0], index: 0, start: true }];
+    if (!closed) list.push({ point: open[open.length - 1], index: open.length - 1, start: false });
+    return list;
+  }, [open, closed]);
+
   function flyToFocus() {
     const map = mapRef.current;
     if (!map || !focus) return;
@@ -80,6 +98,10 @@ export function PlotDrawMap({
   function fitDraft() {
     const map = mapRef.current;
     if (!map || open.length === 0) {
+      if (gps) {
+        map?.flyTo({ center: [gps.lng, gps.lat], zoom: 17, duration: 450 });
+        return;
+      }
       flyToFocus();
       return;
     }
@@ -102,6 +124,14 @@ export function PlotDrawMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusKey]);
 
+  useEffect(() => {
+    if (!followGps || !gps) return;
+    const map = mapRef.current;
+    if (!map) return;
+    map.easeTo({ center: [gps.lng, gps.lat], zoom: Math.max(map.getZoom(), 17), duration: 350 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [followGps, gpsKey]);
+
   return (
     <div className={`relative h-full min-h-0 overflow-hidden ${className}`}>
       <Map
@@ -114,9 +144,9 @@ export function PlotDrawMap({
         }}
         maxZoom={20}
         mapStyle={mapStyle}
-        cursor={closed ? "default" : "crosshair"}
+        cursor={closed || !allowClick ? "default" : "crosshair"}
         onClick={(event) => {
-          if (closed) return;
+          if (closed || !allowClick) return;
           placedRef.current = true;
           // Snap to first vertex in screen space so tapping the start marker closes.
           if (open.length >= 3) {
@@ -135,6 +165,7 @@ export function PlotDrawMap({
         }}
         onLoad={() => {
           if (open.length > 0) fitDraft();
+          else if (gps) mapRef.current?.flyTo({ center: [gps.lng, gps.lat], zoom: 17, duration: 450 });
           else flyToFocus();
         }}
       >
@@ -153,15 +184,23 @@ export function PlotDrawMap({
             paint={{ "line-color": "#f4c35d", "line-width": 2.5 }}
           />
         </Source>
-        {open.map((point, index) => (
+        {markers.map(({ point, index, start }) => (
           <Marker key={`${point[0]}:${point[1]}:${index}`} longitude={point[0]} latitude={point[1]} anchor="center">
             <span
               className={`pointer-events-none block rounded-full border-2 border-white shadow ${
-                index === 0 ? "h-3.5 w-3.5 bg-brand" : "h-3 w-3 bg-accent"
+                start ? "h-3.5 w-3.5 bg-brand" : "h-3 w-3 bg-accent"
               }`}
             />
           </Marker>
         ))}
+        {gps && (
+          <Marker longitude={gps.lng} latitude={gps.lat} anchor="center">
+            <span className="pointer-events-none relative flex h-5 w-5 items-center justify-center">
+              <span className="absolute h-5 w-5 animate-ping rounded-full bg-sky-400/40" />
+              <span className="relative h-3.5 w-3.5 rounded-full border-2 border-white bg-sky-500 shadow" />
+            </span>
+          </Marker>
+        )}
       </Map>
 
       <div className="absolute left-3 top-3 z-10 flex gap-1.5">
