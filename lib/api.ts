@@ -19,6 +19,8 @@ export type Farmer = {
   groupId: string | null;
   deliveredKg: number;
   avatarUrl?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type Plot = {
@@ -30,6 +32,8 @@ export type Plot = {
   districtId: number;
   subdistrictId: number;
   previewUrl?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
   polygon: number[][];
 };
 
@@ -45,6 +49,8 @@ export type PlotCard = {
   previewUrl?: string | null;
   hasBoundary: boolean;
   ownerName?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type FarmerSession = {
